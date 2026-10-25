@@ -2,6 +2,14 @@ name: Refresh election tracker
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - public/index.html
+      - public/app.js
+      - public/styles.css
+      - .github/workflows/update-results.yml
   schedule:
     - cron: '*/5 * * * *'
 

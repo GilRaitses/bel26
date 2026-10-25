@@ -3,511 +3,138 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="A live map of Brazil's 2026 presidential runoff count, what remains and the path to 50% plus one.">
-  <meta name="theme-color" content="#08120f">
+  <meta name="description" content="A live map of Brazil's 2026 presidential runoff count, with state and municipality drill-down.">
+  <meta name="theme-color" content="#07110e">
   <title>Brazil runoff: live path to 50% + 1</title>
-  <style>
-    :root {
-      color-scheme: dark;
-      --bg: #07110e;
-      --panel: #0c1915;
-      --panel-2: #11211b;
-      --ink: #f2f7f4;
-      --muted: #9db1a7;
-      --border: #243b32;
-      --lula: #f04444;
-      --flavio: #4b8df8;
-      --neutral: #e3b341;
-      --green: #52d08a;
-      --shadow: 0 24px 60px rgba(0, 0, 0, .28);
-      --radius: 18px;
-    }
-
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      margin: 0;
-      min-width: 320px;
-      background:
-        radial-gradient(circle at 12% -10%, rgba(82, 208, 138, .13), transparent 32rem),
-        radial-gradient(circle at 94% 8%, rgba(227, 179, 65, .09), transparent 28rem),
-        var(--bg);
-      color: var(--ink);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      line-height: 1.45;
-    }
-
-    button, select { font: inherit; }
-    button:focus-visible, select:focus-visible, a:focus-visible, .map-state:focus-visible {
-      outline: 3px solid rgba(82, 208, 138, .55);
-      outline-offset: 3px;
-    }
-    a { color: #8fc5ff; }
-
-    .page { width: min(1440px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 52px; }
-    .topline { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; margin-bottom: 22px; }
-    .eyebrow { color: var(--green); font-size: .76rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
-    h1 { max-width: 830px; margin: 7px 0 8px; font-size: clamp(2rem, 4.6vw, 4.8rem); line-height: .98; letter-spacing: -.055em; }
-    .dek { max-width: 760px; margin: 0; color: var(--muted); font-size: clamp(1rem, 1.55vw, 1.2rem); }
-    .status { display: flex; align-items: center; gap: 9px; min-width: max-content; margin-top: 4px; padding: 9px 13px; border: 1px solid var(--border); border-radius: 999px; background: rgba(12, 25, 21, .75); color: var(--muted); font-size: .84rem; }
-    .status-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 6px rgba(82, 208, 138, .12); }
-    .status.final .status-dot { background: var(--neutral); box-shadow: 0 0 0 6px rgba(227, 179, 65, .12); }
-
-    .ticker { display: grid; grid-template-columns: 1.15fr 1.35fr 1fr 1fr; border: 1px solid var(--border); border-radius: var(--radius); background: rgba(12, 25, 21, .92); box-shadow: var(--shadow); overflow: hidden; }
-    .tick { min-width: 0; padding: 18px 20px; border-right: 1px solid var(--border); }
-    .tick:last-child { border-right: 0; }
-    .tick-label { color: var(--muted); font-size: .76rem; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; }
-    .tick-value { margin-top: 4px; font-size: clamp(1.3rem, 2.3vw, 2.2rem); font-weight: 820; letter-spacing: -.035em; font-variant-numeric: tabular-nums; white-space: nowrap; }
-    .tick-sub { margin-top: 2px; color: var(--muted); font-size: .81rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .lula { color: var(--lula); }
-    .flavio { color: var(--flavio); }
-
-    .controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 22px 0 14px; }
-    .control-group { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid var(--border); border-radius: 12px; background: var(--panel); }
-    .view-button { border: 0; border-radius: 8px; padding: 8px 12px; color: var(--muted); background: transparent; cursor: pointer; }
-    .view-button[aria-pressed="true"] { color: var(--ink); background: var(--panel-2); box-shadow: inset 0 0 0 1px #304b40; }
-    .state-picker { display: flex; align-items: center; gap: 8px; margin-left: auto; color: var(--muted); font-size: .84rem; }
-    select { max-width: 220px; padding: 8px 32px 8px 10px; border: 1px solid var(--border); border-radius: 9px; background: var(--panel); color: var(--ink); }
-
-    .dashboard { display: grid; grid-template-columns: minmax(0, 1.48fr) minmax(330px, .72fr); gap: 16px; align-items: start; }
-    .panel { border: 1px solid var(--border); border-radius: var(--radius); background: linear-gradient(145deg, rgba(17, 33, 27, .94), rgba(9, 20, 16, .95)); box-shadow: var(--shadow); }
-    .map-panel { min-width: 0; padding: 16px; }
-    .panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
-    h2, h3 { margin: 0; letter-spacing: -.025em; }
-    h2 { font-size: 1.14rem; }
-    h3 { font-size: .95rem; }
-    .panel-kicker, .muted { color: var(--muted); }
-    .panel-kicker { margin-top: 3px; font-size: .79rem; }
-    #brazil-map { display: block; width: 100%; min-height: 430px; }
-    .map-state { cursor: pointer; stroke: #07110e; stroke-width: 1.25; vector-effect: non-scaling-stroke; transition: opacity .2s, filter .2s, stroke-width .2s; }
-    .map-state:hover, .map-state.selected { filter: brightness(1.2); stroke: #f2f7f4; stroke-width: 2.4; }
-    .state-label { fill: var(--ink); font-size: 11px; font-weight: 750; text-anchor: middle; pointer-events: none; paint-order: stroke; stroke: #07110e; stroke-width: 3px; stroke-linejoin: round; }
-    .legend { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; min-height: 22px; color: var(--muted); font-size: .78rem; }
-    .legend-key { display: inline-flex; align-items: center; gap: 6px; }
-    .swatch { width: 11px; height: 11px; border-radius: 50%; }
-
-    .rail { display: grid; gap: 16px; }
-    .rail .panel { padding: 17px; }
-    #path-chart, #region-chart { display: block; width: 100%; }
-    .chart-label { fill: var(--ink); font-size: 12px; }
-    .chart-muted { fill: var(--muted); font-size: 11px; }
-    .chart-track { fill: rgba(157, 177, 167, .14); }
-    .majority-line { stroke: rgba(242, 247, 244, .8); stroke-width: 1.15; stroke-dasharray: 4 4; vector-effect: non-scaling-stroke; }
-    .section-rule { height: 1px; margin: 15px 0; background: var(--border); }
-    .next-list { display: grid; gap: 10px; margin-top: 12px; }
-    .next-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: .8rem; }
-    .mini-track { grid-column: 1 / -1; height: 5px; border-radius: 999px; background: rgba(157, 177, 167, .14); overflow: hidden; }
-    .mini-fill { height: 100%; border-radius: inherit; }
-
-    .state-detail { display: grid; grid-template-columns: 1.2fr repeat(4, 1fr); gap: 13px; margin-top: 16px; padding: 16px 18px; }
-    .detail-name { align-self: center; }
-    .detail-name h2 { margin-bottom: 4px; font-size: 1.22rem; }
-    .detail-item { padding-left: 13px; border-left: 1px solid var(--border); }
-    .detail-label { color: var(--muted); font-size: .72rem; font-weight: 720; letter-spacing: .055em; text-transform: uppercase; }
-    .detail-value { margin-top: 4px; font-size: .98rem; font-weight: 760; font-variant-numeric: tabular-nums; }
-
-    .method { display: grid; grid-template-columns: 1fr auto; gap: 22px; align-items: start; margin-top: 16px; padding: 17px 19px; color: var(--muted); font-size: .79rem; }
-    .method p { margin: 0; max-width: 960px; }
-    .stamp { white-space: nowrap; text-align: right; }
-    .error { display: none; margin: 14px 0 0; padding: 11px 13px; border: 1px solid rgba(240, 68, 68, .45); border-radius: 10px; background: rgba(240, 68, 68, .09); color: #ffc4c4; font-size: .84rem; }
-    .error.visible { display: block; }
-
-    @media (max-width: 980px) {
-      .ticker { grid-template-columns: repeat(2, 1fr); }
-      .tick:nth-child(2) { border-right: 0; }
-      .tick:nth-child(-n+2) { border-bottom: 1px solid var(--border); }
-      .dashboard { grid-template-columns: 1fr; }
-      .rail { grid-template-columns: 1fr 1fr; }
-      .state-detail { grid-template-columns: repeat(2, 1fr); }
-      .detail-name { grid-column: 1 / -1; }
-      .detail-item:nth-child(2), .detail-item:nth-child(4) { padding-left: 0; border-left: 0; }
-    }
-
-    @media (max-width: 680px) {
-      .page { width: min(100% - 20px, 1440px); padding-top: 18px; }
-      .topline { display: block; }
-      .status { width: fit-content; margin-top: 15px; }
-      .ticker { grid-template-columns: 1fr; }
-      .tick, .tick:nth-child(2) { border-right: 0; border-bottom: 1px solid var(--border); }
-      .tick:last-child { border-bottom: 0; }
-      .state-picker { width: 100%; margin-left: 0; justify-content: space-between; }
-      select { flex: 1; }
-      .rail { grid-template-columns: 1fr; }
-      #brazil-map { min-height: 360px; }
-      .state-detail { grid-template-columns: 1fr 1fr; }
-      .detail-item { padding-left: 0; border-left: 0; }
-      .method { grid-template-columns: 1fr; }
-      .stamp { text-align: left; }
-    }
-  </style>
+  <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <main class="page">
     <header class="topline">
       <div>
-        <div class="eyebrow">Brazil · Presidential runoff</div>
-        <h1>Live path to 50% + 1</h1>
-        <p class="dek">What has been counted, where the remaining vote sits and how each candidate can reach a majority.</p>
+        <div class="eyebrow" data-i18n="eyebrow">Brazil · Presidential runoff</div>
+        <h1 data-i18n="title">Live path to 50% + 1</h1>
+        <p class="dek" data-i18n="dek">What has been counted, where the remaining vote sits and how each candidate can reach a majority.</p>
       </div>
-      <div class="status" id="live-status"><span class="status-dot"></span><span id="status-text">Loading count…</span></div>
+      <div class="header-tools">
+        <div class="language" role="group" aria-label="Language">
+          <button type="button" data-language="en" aria-pressed="true">EN</button>
+          <button type="button" data-language="pt" aria-pressed="false">PT</button>
+        </div>
+        <div class="status" id="live-status"><span class="status-dot"></span><span id="status-text">Loading count…</span></div>
+      </div>
     </header>
 
-    <section class="ticker" aria-label="National count snapshot">
+    <section class="ticker" aria-label="National count snapshot" id="national-snapshot">
       <div class="tick">
-        <div class="tick-label">Counted</div>
+        <div class="tick-label" data-i18n="counted">Counted</div>
         <div class="tick-value" id="counted-value">—</div>
-        <div class="tick-sub" id="counted-sub">Waiting for data</div>
+        <div class="tick-sub" id="counted-sub">—</div>
       </div>
       <div class="tick">
-        <div class="tick-label">Current leader</div>
+        <div class="tick-label" data-i18n="currentLeader">Current leader</div>
         <div class="tick-value" id="leader-value">—</div>
         <div class="tick-sub" id="leader-sub">—</div>
       </div>
       <div class="tick">
-        <div class="tick-label">Baseline finish</div>
+        <div class="tick-label" data-i18n="baselineFinish">Baseline finish</div>
         <div class="tick-value" id="projection-value">—</div>
-        <div class="tick-sub">First-round state pattern</div>
+        <div class="tick-sub" data-i18n="baselinePattern">First-round state pattern</div>
       </div>
       <div class="tick">
-        <div class="tick-label">Votes still ahead</div>
+        <div class="tick-label" data-i18n="votesAhead">Votes still ahead</div>
         <div class="tick-value" id="remaining-value">—</div>
-        <div class="tick-sub" id="remaining-sub">Estimated valid vote</div>
+        <div class="tick-sub" id="remaining-sub">—</div>
       </div>
     </section>
 
+    <nav class="map-nav" aria-label="Map navigation">
+      <div class="breadcrumbs" id="breadcrumbs">
+        <button type="button" class="crumb active" id="country-crumb" data-i18n="brazil">Brazil</button>
+        <span class="crumb-separator" id="state-separator" hidden>›</span>
+        <button type="button" class="crumb" id="state-crumb" hidden></button>
+        <span class="crumb-separator" id="muni-separator" hidden>›</span>
+        <span class="crumb current" id="muni-crumb" hidden></span>
+      </div>
+      <button class="back-button" id="back-country" type="button" hidden>
+        <span aria-hidden="true">↙</span> <span data-i18n="backBrazil">Back to Brazil</span>
+      </button>
+    </nav>
+
     <div class="controls">
       <div class="control-group" aria-label="Map view">
-        <button class="view-button" data-view="remaining" aria-pressed="true">Still to count</button>
-        <button class="view-button" data-view="counted" aria-pressed="false">Counted</button>
-        <button class="view-button" data-view="lean" aria-pressed="false">Estimated lean</button>
+        <button class="view-button" data-view="remaining" aria-pressed="true" data-i18n="stillToCount">Still to count</button>
+        <button class="view-button" data-view="counted" aria-pressed="false" data-i18n="counted">Counted</button>
+        <button class="view-button" data-view="lean" aria-pressed="false" data-i18n="estimatedLean">Estimated lean</button>
       </div>
-      <label class="state-picker" for="state-select">Inspect state <select id="state-select" aria-label="Inspect a state"></select></label>
+      <label class="state-picker" for="state-select"><span data-i18n="exploreState">Explore state</span> <select id="state-select"></select></label>
     </div>
 
     <div class="dashboard">
-      <section class="panel map-panel">
+      <section class="panel map-panel" id="map-panel">
         <div class="panel-head">
           <div>
             <h2 id="map-heading">Where the remaining vote is</h2>
-            <div class="panel-kicker" id="map-subheading">Darker states have more estimated votes left to count.</div>
+            <div class="panel-kicker" id="map-subheading">Click a state to open its municipalities.</div>
           </div>
+          <div class="map-level-badge" id="map-level-badge" data-i18n="states">States</div>
         </div>
-        <svg id="brazil-map" role="img" aria-labelledby="map-heading map-description">
-          <desc id="map-description">Interactive map of election reporting and estimated remaining vote by Brazilian state.</desc>
-        </svg>
+        <div class="map-stage">
+          <svg id="brazil-map" role="img" aria-labelledby="map-heading map-description">
+            <desc id="map-description">Interactive map of election reporting by Brazilian state and municipality.</desc>
+          </svg>
+          <div class="map-loading" id="map-loading" hidden>
+            <span class="spinner" aria-hidden="true"></span><span id="map-loading-copy">Loading municipalities…</span>
+          </div>
+          <div class="map-hint" id="map-hint" data-i18n="mapHint">Click a state to drill into municipality results</div>
+        </div>
         <div class="legend" id="map-legend"></div>
       </section>
 
       <aside class="rail">
-        <section class="panel">
-          <h2>Path to a majority</h2>
-          <div class="panel-kicker">Solid is counted. Pale is the baseline estimate still ahead.</div>
+        <section class="panel feed-panel">
+          <div class="panel-head feed-head">
+            <div>
+              <h2 data-i18n="liveChanges">Live changes</h2>
+              <div class="panel-kicker" id="feed-kicker">Checking every 15 seconds.</div>
+            </div>
+            <span class="feed-pulse" aria-hidden="true"></span>
+          </div>
+          <div class="feed" id="change-feed" aria-live="polite"></div>
+        </section>
+
+        <section class="panel path-panel">
+          <h2 data-i18n="pathMajority">Path to a majority</h2>
+          <div class="panel-kicker" data-i18n="pathExplainer">Solid is counted. Pale is the baseline estimate still ahead.</div>
           <svg id="path-chart" role="img" aria-label="Candidate totals and estimated path to a majority"></svg>
           <div class="section-rule"></div>
-          <h3>What each candidate needs</h3>
+          <h3 data-i18n="candidateNeeds">What each candidate needs</h3>
           <div class="panel-kicker" id="needs-copy">—</div>
         </section>
 
-        <section class="panel">
-          <h2>What comes next</h2>
-          <div class="panel-kicker">Estimated uncounted valid vote by region.</div>
+        <section class="panel context-panel">
+          <h2 id="context-title">What comes next</h2>
+          <div class="panel-kicker" id="context-kicker">Estimated uncounted valid vote by region.</div>
           <svg id="region-chart" role="img" aria-label="Estimated remaining vote by region"></svg>
-          <div class="section-rule"></div>
-          <h3>Largest state counts ahead</h3>
           <div class="next-list" id="next-list"></div>
         </section>
       </aside>
     </div>
 
-    <section class="panel state-detail" id="state-detail" aria-live="polite"></section>
+    <section class="panel place-detail" id="place-detail" aria-live="polite"></section>
 
     <footer class="panel method">
-      <p><strong>How the estimate works:</strong> the current count is official-source data carried by the public Poliwave tracker. Remaining valid vote in each state is estimated from first-round turnout, then split at that state’s first-round Lula–Flávio two-way share. It is a counting-path model, not a race call. Late regional shifts can change the result.</p>
-      <div class="stamp"><a href="https://www.poliwave.com/br/live/presidente-2026" target="_blank" rel="noreferrer">Data source</a><br><span id="source-time">—</span></div>
+      <p id="method-copy"><strong>How the estimate works:</strong> the live count is official-source data carried by the public Poliwave tracker. Remaining valid vote in each place is estimated from first-round turnout, then split at that place’s first-round Lula–Flávio two-way share. It is a counting-path model, not a race call.</p>
+      <div class="stamp">
+        <a href="https://www.poliwave.com/br/live/presidente-2026" target="_blank" rel="noreferrer" data-i18n="resultsSource">Results source</a><br>
+        <a href="https://github.com/tbrugz/geodata-br" target="_blank" rel="noreferrer" data-i18n="boundarySource">Municipal boundaries</a><br>
+        <span id="source-time">—</span>
+      </div>
     </footer>
     <div class="error" id="error-box" role="status"></div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
-  <script>
-    (() => {
-      const DATA_URL = './data/results.json';
-      const GEO_URL = './data/brazil-states.json';
-      const REFRESH_MS = 60_000;
-      const $ = selector => document.querySelector(selector);
-      const state = { data: null, geo: null, view: 'remaining', selected: null, timer: null };
-      const number = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
-      const compact = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 2 });
-      const pct = value => Number(value || 0).toFixed(2) + '%';
-      const share = (value, total) => total ? 100 * value / total : 0;
-      const candidateClass = name => name === 'Lula' ? 'lula' : 'flavio';
-      const candidateColor = name => name === 'Lula' ? 'var(--lula)' : 'var(--flavio)';
-      const safeWidth = (node, floor) => Math.max(floor, node.getBoundingClientRect().width || floor);
-
-      async function getJson(url) {
-        const response = await fetch(url + '?v=' + Date.now(), { cache: 'no-store' });
-        if (!response.ok) throw new Error('Request failed: ' + response.status);
-        return response.json();
-      }
-
-      function ageLabel(iso) {
-        const seconds = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
-        if (seconds < 60) return seconds + 's ago';
-        const minutes = Math.round(seconds / 60);
-        if (minutes < 60) return minutes + 'm ago';
-        return Math.round(minutes / 60) + 'h ago';
-      }
-
-      function updateHeader() {
-        const data = state.data;
-        const n = data.national;
-        const currentLeader = n.currentL >= n.currentF ? 'Lula' : 'Flávio';
-        const currentWinner = Math.max(n.currentL, n.currentF);
-        const projectionLeader = n.projectedL >= n.projectedF ? 'Lula' : 'Flávio';
-        const projectionWinner = Math.max(n.projectedL, n.projectedF);
-        const totalRemaining = Math.max(0, n.expectedValid - n.currentValid);
-        const status = $('#live-status');
-
-        status.classList.toggle('final', data.meta.final);
-        $('#status-text').textContent = data.meta.final ? 'Final count' : 'Live · checked ' + ageLabel(data.meta.sourceTime);
-        $('#counted-value').textContent = pct(n.countedPct);
-        $('#counted-sub').textContent = number.format(n.reported) + ' of ' + number.format(n.totalPolls) + ' polling stations';
-        $('#leader-value').className = 'tick-value ' + candidateClass(currentLeader);
-        $('#leader-value').textContent = currentLeader + ' ' + pct(share(currentWinner, n.currentValid));
-        $('#leader-sub').textContent = compact.format(Math.abs(n.currentL - n.currentF)) + ' vote lead · ' + compact.format(n.currentValid) + ' valid';
-        $('#projection-value').className = 'tick-value ' + candidateClass(projectionLeader);
-        $('#projection-value').textContent = projectionLeader + ' ' + pct(share(projectionWinner, n.expectedValid));
-        $('#remaining-value').textContent = compact.format(totalRemaining);
-        $('#remaining-sub').textContent = data.meta.final ? 'Count complete' : pct(100 - n.countedPct) + ' of count estimated ahead';
-        $('#source-time').textContent = 'Source time ' + new Date(data.meta.sourceTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'medium' });
-        document.title = (data.meta.final ? 'Final: ' : 'Live: ') + currentLeader + ' leads Brazil runoff';
-      }
-
-      function fillFor(row) {
-        if (state.view === 'counted') return 'var(--neutral)';
-        return candidateColor(row.projectedLeader);
-      }
-
-      function opacityFor(row) {
-        if (state.view === 'counted') return .16 + .82 * Math.min(1, row.countedPct / 100);
-        if (state.view === 'lean') return .22 + .76 * Math.min(1, row.projectedMargin / .32);
-        const max = d3.max(state.data.states.filter(d => d.code !== 'zz'), d => d.remaining) || 1;
-        return .14 + .84 * Math.sqrt(row.remaining / max);
-      }
-
-      function mapCopy() {
-        const copy = {
-          remaining: ['Where the remaining vote is', 'Darker states have more estimated votes left to count.'],
-          counted: ['How far each state has counted', 'Darker states have reported more of their polling stations.'],
-          lean: ['Baseline lean of the vote ahead', 'Color shows the estimated leader. Darkness shows the projected margin.']
-        }[state.view];
-        $('#map-heading').textContent = copy[0];
-        $('#map-subheading').textContent = copy[1];
-        $('#map-legend').innerHTML = '<span class="legend-key"><span class="swatch" style="background:var(--lula)"></span>Lula baseline</span>' +
-          '<span class="legend-key"><span class="swatch" style="background:var(--flavio)"></span>Flávio baseline</span>' +
-          '<span>' + copy[1] + '</span>';
-      }
-
-      function drawMap() {
-        const svg = d3.select('#brazil-map');
-        const node = svg.node();
-        const width = safeWidth(node, 320);
-        const height = Math.max(390, Math.min(660, width * .7));
-        const stateByCode = new Map(state.data.states.map(row => [row.code, row]));
-        svg.attr('viewBox', `0 0 ${width} ${height}`).selectAll('*').remove();
-        const projection = d3.geoMercator().fitExtent([[12, 10], [width - 12, height - 10]], state.geo);
-        const path = d3.geoPath(projection);
-        const layer = svg.append('g');
-
-        layer.selectAll('path')
-          .data(state.geo.features)
-          .join('path')
-          .attr('class', feature => 'map-state' + (feature.properties.sigla.toLowerCase() === state.selected ? ' selected' : ''))
-          .attr('d', path)
-          .attr('fill', feature => fillFor(stateByCode.get(feature.properties.sigla.toLowerCase())))
-          .attr('fill-opacity', feature => opacityFor(stateByCode.get(feature.properties.sigla.toLowerCase())))
-          .attr('tabindex', 0)
-          .attr('role', 'button')
-          .attr('aria-label', feature => {
-            const row = stateByCode.get(feature.properties.sigla.toLowerCase());
-            return `${row.name}: ${pct(row.countedPct)} counted, ${compact.format(row.remaining)} estimated votes remain, ${row.projectedLeader} baseline.`;
-          })
-          .on('click keydown', (event, feature) => {
-            if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') return;
-            if (event.type === 'keydown') event.preventDefault();
-            selectState(feature.properties.sigla.toLowerCase());
-          })
-          .append('title')
-          .text(feature => {
-            const row = stateByCode.get(feature.properties.sigla.toLowerCase());
-            return `${row.name}: ${pct(row.countedPct)} counted · ${compact.format(row.remaining)} estimated votes remain`;
-          });
-
-        if (width >= 440) {
-          layer.selectAll('text')
-            .data(state.geo.features)
-            .join('text')
-            .attr('class', 'state-label')
-            .attr('transform', feature => `translate(${path.centroid(feature).join(',')})`)
-            .attr('dy', '-.12em')
-            .text(feature => {
-              const row = stateByCode.get(feature.properties.sigla.toLowerCase());
-              if (width < 600 && row.expectedValid < 1_900_000) return '';
-              return row.abbr + ' ' + Math.round(row.countedPct) + '%';
-            });
-        }
-        mapCopy();
-      }
-
-      function drawPath() {
-        const data = state.data.national;
-        const svg = d3.select('#path-chart');
-        const width = safeWidth(svg.node(), 280);
-        const height = 185;
-        const left = 8;
-        const right = width - 8;
-        const x = d3.scaleLinear().domain([0, data.expectedValid]).range([left, right]);
-        svg.attr('viewBox', `0 0 ${width} ${height}`).selectAll('*').remove();
-        const majorityX = x(data.majority);
-        svg.append('line').attr('class', 'majority-line').attr('x1', majorityX).attr('x2', majorityX).attr('y1', 20).attr('y2', 158);
-        svg.append('text').attr('class', 'chart-muted').attr('x', majorityX).attr('y', 13).attr('text-anchor', majorityX > width - 70 ? 'end' : 'middle').text('50% + 1 · ' + compact.format(data.majority));
-        [
-          { name: 'Lula', current: data.currentL, projected: data.projectedL, y: 50, color: 'var(--lula)' },
-          { name: 'Flávio', current: data.currentF, projected: data.projectedF, y: 116, color: 'var(--flavio)' }
-        ].forEach(row => {
-          svg.append('text').attr('class', 'chart-label').attr('x', left).attr('y', row.y - 11).text(row.name + ' · ' + compact.format(row.current) + ' counted');
-          svg.append('rect').attr('class', 'chart-track').attr('x', left).attr('y', row.y).attr('width', right - left).attr('height', 19).attr('rx', 4);
-          svg.append('rect').attr('x', left).attr('y', row.y).attr('width', Math.max(0, x(row.current) - left)).attr('height', 19).attr('rx', 4).attr('fill', row.color);
-          svg.append('rect').attr('x', x(row.current)).attr('y', row.y).attr('width', Math.max(0, x(row.projected) - x(row.current))).attr('height', 19).attr('rx', 4).attr('fill', row.color).attr('opacity', .33);
-          svg.append('text').attr('class', 'chart-muted').attr('x', Math.min(right, x(row.projected))).attr('y', row.y + 36).attr('text-anchor', x(row.projected) > width - 66 ? 'end' : 'middle').text('baseline ' + compact.format(row.projected));
-        });
-
-        const remaining = Math.max(0, data.expectedValid - data.currentValid);
-        const lulaNeed = Math.max(0, data.majority - data.currentL);
-        const flavioNeed = Math.max(0, data.majority - data.currentF);
-        if (state.data.meta.final) {
-          const winner = data.currentL >= data.currentF ? 'Lula' : 'Flávio';
-          $('#needs-copy').textContent = winner + ' finished above the majority line. The live updater has stopped.';
-        } else {
-          $('#needs-copy').textContent = `Lula needs ${compact.format(lulaNeed)} (${pct(share(lulaNeed, remaining))} of the estimated vote left). Flávio needs ${compact.format(flavioNeed)} (${pct(share(flavioNeed, remaining))}).`;
-        }
-      }
-
-      function drawRegions() {
-        const svg = d3.select('#region-chart');
-        const width = safeWidth(svg.node(), 280);
-        const rowHeight = 40;
-        const height = state.data.regions.length * rowHeight + 16;
-        const left = width < 380 ? 82 : 96;
-        const right = width - 8;
-        const max = d3.max(state.data.regions, row => row.remaining) || 1;
-        const x = d3.scaleLinear().domain([0, max]).range([0, right - left]);
-        svg.attr('viewBox', `0 0 ${width} ${height}`).selectAll('*').remove();
-        state.data.regions.forEach((row, index) => {
-          const y = 10 + index * rowHeight;
-          svg.append('text').attr('class', 'chart-label').attr('x', 0).attr('y', y + 12).text(row.name);
-          svg.append('rect').attr('class', 'chart-track').attr('x', left).attr('y', y).attr('width', right - left).attr('height', 14).attr('rx', 3);
-          const lulaWidth = x(row.remainingL);
-          const flavioWidth = x(row.remainingF);
-          svg.append('rect').attr('x', left).attr('y', y).attr('width', lulaWidth).attr('height', 14).attr('rx', 3).attr('fill', 'var(--lula)').attr('opacity', .7);
-          svg.append('rect').attr('x', left + lulaWidth).attr('y', y).attr('width', flavioWidth).attr('height', 14).attr('rx', 3).attr('fill', 'var(--flavio)').attr('opacity', .7);
-          svg.append('text').attr('class', 'chart-muted').attr('x', Math.min(right, left + lulaWidth + flavioWidth + 5)).attr('y', y + 12).attr('text-anchor', left + lulaWidth + flavioWidth > right - 45 ? 'end' : 'start').text(compact.format(row.remaining));
-        });
-      }
-
-      function drawNext() {
-        const rows = state.data.topRemaining;
-        const max = Math.max(...rows.map(row => row.remaining), 1);
-        $('#next-list').innerHTML = rows.map(row => {
-          const width = Math.max(0, 100 * row.remaining / max);
-          return `<div class="next-row"><span>${row.name}</span><span class="muted">${compact.format(row.remaining)} · ${row.projectedLeader}</span><div class="mini-track"><div class="mini-fill" style="width:${width}%;background:${candidateColor(row.projectedLeader)}"></div></div></div>`;
-        }).join('');
-      }
-
-      function drawDetail() {
-        const row = state.data.states.find(item => item.code === state.selected) || state.data.states[0];
-        const leader = row.projectedLeader;
-        $('#state-detail').innerHTML = `<div class="detail-name"><h2>${row.name}</h2><div class="muted">${leader} baseline</div></div>` +
-          `<div class="detail-item"><div class="detail-label">Counted</div><div class="detail-value">${pct(row.countedPct)}</div></div>` +
-          `<div class="detail-item"><div class="detail-label">Current split</div><div class="detail-value"><span class="lula">L ${pct(share(row.currentL, row.currentValid))}</span> · <span class="flavio">F ${pct(share(row.currentF, row.currentValid))}</span></div></div>` +
-          `<div class="detail-item"><div class="detail-label">Still ahead</div><div class="detail-value">${compact.format(row.remaining)}</div></div>` +
-          `<div class="detail-item"><div class="detail-label">Baseline finish</div><div class="detail-value ${candidateClass(leader)}">${leader} ${pct(share(Math.max(row.projectedL, row.projectedF), row.expectedValid))}</div></div>`;
-      }
-
-      function populateSelect() {
-        const select = $('#state-select');
-        const prior = state.selected;
-        select.innerHTML = '';
-        state.data.states.filter(row => row.code !== 'zz').sort((a, b) => a.name.localeCompare(b.name)).forEach(row => {
-          const option = document.createElement('option');
-          option.value = row.code;
-          option.textContent = row.name;
-          select.appendChild(option);
-        });
-        state.selected = prior && state.data.states.some(row => row.code === prior) ? prior : state.data.topRemaining[0]?.code || 'sp';
-        select.value = state.selected;
-      }
-
-      function render() {
-        updateHeader();
-        populateSelect();
-        drawMap();
-        drawPath();
-        drawRegions();
-        drawNext();
-        drawDetail();
-      }
-
-      function selectState(code) {
-        state.selected = code;
-        $('#state-select').value = code;
-        drawMap();
-        drawDetail();
-      }
-
-      async function refresh({ initial = false } = {}) {
-        try {
-          const [data, geo] = await Promise.all([
-            getJson(DATA_URL),
-            state.geo ? Promise.resolve(state.geo) : getJson(GEO_URL)
-          ]);
-          const changed = !state.data || data.meta.sourceTime !== state.data.meta.sourceTime || data.meta.final !== state.data.meta.final;
-          state.data = data;
-          state.geo = geo;
-          if (changed || initial) render();
-          else updateHeader();
-          $('#error-box').classList.remove('visible');
-          if (data.meta.final && state.timer) {
-            clearInterval(state.timer);
-            state.timer = null;
-          }
-        } catch (error) {
-          const box = $('#error-box');
-          box.textContent = state.data ? 'Could not check for a newer count. The last available snapshot remains on screen.' : 'The live data could not be loaded. Please refresh in a moment.';
-          box.classList.add('visible');
-          console.error(error);
-        }
-      }
-
-      document.querySelectorAll('[data-view]').forEach(button => {
-        button.addEventListener('click', () => {
-          state.view = button.dataset.view;
-          document.querySelectorAll('[data-view]').forEach(peer => peer.setAttribute('aria-pressed', peer === button ? 'true' : 'false'));
-          drawMap();
-        });
-      });
-      $('#state-select').addEventListener('change', event => selectState(event.target.value));
-      const resize = new ResizeObserver(() => {
-        if (!state.data) return;
-        drawMap();
-        drawPath();
-        drawRegions();
-      });
-      resize.observe($('.dashboard'));
-      refresh({ initial: true }).then(() => {
-        if (!state.data?.meta.final) state.timer = setInterval(refresh, REFRESH_MS);
-      });
-    })();
-  </script>
+  <script src="./app.js"></script>
 </body>
 </html>
