@@ -1,0 +1,68 @@
+name: Refresh election tracker
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+  actions: write
+
+concurrency:
+  group: brazil-election-pages
+  cancel-in-progress: false
+
+jobs:
+  refresh-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Fetch latest count
+        run: node scripts/update-results.mjs
+
+      - name: Save newer snapshot
+        run: |
+          if git diff --quiet -- public/data/results.json; then
+            echo "No newer source snapshot."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/results.json
+          git commit -m "Update election count"
+          git push
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: Deploy site
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Read final flag
+        id: final
+        run: echo "value=$(node -p \"require('./public/data/results.json').meta.final\")" >> "$GITHUB_OUTPUT"
+
+      - name: Stop updater after final count
+        if: ${{ steps.final.outputs.value == 'true' }}
+        run: gh api --method PUT "repos/${GITHUB_REPOSITORY}/actions/workflows/update-results.yml/disable"
+        env:
+          GH_TOKEN: ${{ github.token }}
