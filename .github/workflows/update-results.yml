@@ -59,7 +59,9 @@ jobs:
 
       - name: Read final flag
         id: final
-        run: echo "value=$(node -p \"require('./public/data/results.json').meta.final\")" >> "$GITHUB_OUTPUT"
+        run: |
+          final_value=$(node -e "console.log(require('./public/data/results.json').meta.final)")
+          echo "value=$final_value" >> "$GITHUB_OUTPUT"
 
       - name: Stop updater after final count
         if: ${{ steps.final.outputs.value == 'true' }}
